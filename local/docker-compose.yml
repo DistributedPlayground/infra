@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  products-db:
+  product-db:
     image: postgres:14.1-alpine
     restart: always
     environment:
@@ -10,7 +10,7 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - products-db:/var/lib/postgresql/data
+      - product-db:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U dp_user -d product_db" ]
       interval: 15s
@@ -23,7 +23,7 @@ services:
       dockerfile: local.Dockerfile
     container_name: product-migrations
     depends_on:
-      products-db:
+      product-db:
         condition: service_healthy
 
   products:
@@ -32,19 +32,47 @@ services:
       dockerfile: local.Dockerfile
     container_name: products
     ports:
-      - 5555:5555 # api port
-      - 2346:2346 # debug port
+      - 5556:5556 # api port
+      - 2345:2345 # debug port
     depends_on:
-      db:
+      product-db:
         condition: service_healthy
     volumes:
       - ../../products/:/products
 
+  inventory-db:
+    image: redis:7.0-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - inventory-db:/data
+    command: redis-server --requirepass dp_redis_password
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli ping" ]
+      interval: 15s
+      timeout: 15s
+      retries: 50
+  
+  inventory:
+    build:
+      context: ../../inventory/
+      dockerfile: local.Dockerfile
+    container_name: inventory
+    ports:
+      - 5555:5555 # api port
+      - 2346:2346 # debug port
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+    volumes:
+      - ../../inventory/:/inventory
+
 volumes:
-  products-db:
+  product-db:
     driver: local
     ## We want the Redis data not to persist. 
     ## Commenting out the lines below is equivalent to run the command FLUSHALL after each restart
     ## Uncomment the following lines to persist data
-    # redis:
-    #   driver: local
+  inventory-db:
+    driver: local
