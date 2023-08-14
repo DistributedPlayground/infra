@@ -68,6 +68,37 @@ services:
     volumes:
       - ../../inventory/:/inventory
 
+  product-search-db:
+    image: mongo:latest
+    container_name: mongo_container
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongo", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 15s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+  product-search:
+    build:
+      context: ../../product-search/
+      dockerfile: local.Dockerfile
+    container_name: product-search
+    ports:
+      - 5555:5555 # api port
+      - 2346:2346 # debug port
+    depends_on:
+      product-search-db:
+        condition: service_healthy
+    volumes:
+      - ../../product-search/:/product-search
+
 volumes:
   product-db:
     driver: local
@@ -75,4 +106,6 @@ volumes:
     ## Commenting out the lines below is equivalent to run the command FLUSHALL after each restart
     ## Uncomment the following lines to persist data
   inventory-db:
+    driver: local
+  product-search-db:
     driver: local
