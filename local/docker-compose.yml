@@ -27,6 +27,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     # depends_on:
     #   zookeeper:
     #     condition: service_healthy
@@ -121,6 +122,7 @@ services:
       - "27017:27017"
     volumes:
       - product-search-db:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh --username=${MONGO_USER} --password=${MONGO_PASSWORD} --host=localhost --port=27017 --quiet
       interval: 15s
