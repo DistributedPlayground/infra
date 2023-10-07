@@ -1,2 +1,4 @@
 .env
 mongo-init.js
+
+.DS_Store
